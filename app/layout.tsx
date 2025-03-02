@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Ultimate Todo App",
@@ -13,10 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        {children}
-        <Toaster />
+        <Providers attribute="class" defaultTheme="system" enableSystem>
+          {children}
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );
