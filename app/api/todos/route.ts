@@ -5,7 +5,7 @@ import { ZodError, z } from 'zod';
 // バリデーションスキーマ
 const todoSchema = z.object({
   title: z.string().min(1, { message: 'Title is required' }),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
   status: z.string().optional(),
   priority: z.string().optional(),
   dueDate: z.string().nullable().optional().transform(val => val ? new Date(val) : null),
@@ -32,9 +32,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('Received todo data:', body);
     
     // 入力データの検証
     const validatedData = todoSchema.parse(body);
+    console.log('Validated todo data:', validatedData);
     
     const newTodo = await TodoService.createTodo(validatedData);
     return NextResponse.json(newTodo, { status: 201 });
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Failed to create todo' },
+      { error: 'Failed to create todo', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
