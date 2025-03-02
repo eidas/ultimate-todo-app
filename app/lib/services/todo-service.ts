@@ -8,12 +8,13 @@ export type TodoWithRelations = Todo & {
 
 export type TodoCreateInput = {
   title: string;
-  description?: string;
+  description?: string | null;
   status?: string;
   priority?: string;
   dueDate?: Date | null;
   categoryId?: string | null;
   tagIds?: string[];
+  completed?: boolean;
 };
 
 export type TodoUpdateInput = Partial<TodoCreateInput> & {
@@ -75,85 +76,112 @@ export async function getTodoById(id: string): Promise<TodoWithRelations | null>
 }
 
 export async function createTodo(data: TodoCreateInput): Promise<Todo> {
-  const { tagIds, ...todoData } = data;
-  
-  // If dueDate is provided as an empty string, set it to null
-  if (todoData.dueDate === '') {
-    todoData.dueDate = null;
+  try {
+    console.log('Creating todo with data in service:', data);
+    
+    const { tagIds, ...todoData } = data;
+    
+    // If dueDate is provided as an empty string, set it to null
+    if (todoData.dueDate === '') {
+      todoData.dueDate = null;
+    }
+    
+    // Create the todo with tags if provided
+    const createData: any = { ...todoData };
+    
+    // Only add tags relation if tagIds is provided and not empty
+    if (tagIds && tagIds.length > 0) {
+      createData.tags = {
+        create: tagIds.map((tagId) => ({
+          tag: {
+            connect: { id: tagId },
+          },
+        })),
+      };
+    }
+    
+    console.log('Final todo create data:', createData);
+    
+    return prisma.todo.create({
+      data: createData,
+    });
+  } catch (error) {
+    console.error('Error in createTodo service:', error);
+    throw error;
   }
-  
-  return prisma.todo.create({
-    data: {
-      ...todoData,
-      ...(tagIds && tagIds.length > 0
-        ? {
-            tags: {
-              create: tagIds.map((tagId) => ({
-                tag: {
-                  connect: { id: tagId },
-                },
-              })),
-            },
-          }
-        : {}),
-    },
-  });
 }
 
 export async function updateTodo(id: string, data: TodoUpdateInput): Promise<Todo> {
-  const { tagIds, ...todoData } = data;
+  try {
+    console.log('Updating todo with data in service:', { id, ...data });
+    
+    const { tagIds, ...todoData } = data;
 
-  // If dueDate is provided as an empty string, set it to null
-  if (todoData.dueDate === '') {
-    todoData.dueDate = null;
-  }
+    // If dueDate is provided as an empty string, set it to null
+    if (todoData.dueDate === '') {
+      todoData.dueDate = null;
+    }
 
-  // First update the todo itself
-  const updatedTodo = await prisma.todo.update({
-    where: { id },
-    data: todoData,
-  });
-
-  // If tagIds is provided, update the tags
-  if (tagIds !== undefined) {
-    // First delete all existing tag relations
-    await prisma.tagsOnTodos.deleteMany({
-      where: { todoId: id },
+    // First update the todo itself
+    const updatedTodo = await prisma.todo.update({
+      where: { id },
+      data: todoData,
     });
 
-    // Then create new tag relations
-    if (tagIds.length > 0) {
-      await prisma.tagsOnTodos.createMany({
-        data: tagIds.map((tagId) => ({
-          todoId: id,
-          tagId,
-        })),
+    // If tagIds is provided, update the tags
+    if (tagIds !== undefined) {
+      // First delete all existing tag relations
+      await prisma.tagsOnTodos.deleteMany({
+        where: { todoId: id },
       });
-    }
-  }
 
-  return updatedTodo;
+      // Then create new tag relations
+      if (tagIds.length > 0) {
+        await prisma.tagsOnTodos.createMany({
+          data: tagIds.map((tagId) => ({
+            todoId: id,
+            tagId,
+          })),
+        });
+      }
+    }
+
+    return updatedTodo;
+  } catch (error) {
+    console.error('Error in updateTodo service:', error);
+    throw error;
+  }
 }
 
 export async function deleteTodo(id: string): Promise<Todo> {
-  return prisma.todo.delete({
-    where: { id },
-  });
+  try {
+    return prisma.todo.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error in deleteTodo service:', error);
+    throw error;
+  }
 }
 
 export async function toggleTodoStatus(id: string): Promise<Todo> {
-  const todo = await prisma.todo.findUnique({
-    where: { id },
-    select: { completed: true },
-  });
+  try {
+    const todo = await prisma.todo.findUnique({
+      where: { id },
+      select: { completed: true },
+    });
 
-  if (!todo) throw new Error(`Todo with ID ${id} not found`);
+    if (!todo) throw new Error(`Todo with ID ${id} not found`);
 
-  return prisma.todo.update({
-    where: { id },
-    data: { 
-      completed: !todo.completed,
-      status: !todo.completed ? 'DONE' : 'TODO'
-    },
-  });
+    return prisma.todo.update({
+      where: { id },
+      data: { 
+        completed: !todo.completed,
+        status: !todo.completed ? 'DONE' : 'TODO'
+      },
+    });
+  } catch (error) {
+    console.error('Error in toggleTodoStatus service:', error);
+    throw error;
+  }
 }
