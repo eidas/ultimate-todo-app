@@ -162,12 +162,12 @@ export function TodoForm({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="categoryId">Category</Label>
-                <Select name="categoryId" defaultValue={todo?.categoryId || ""}>
+                <Select name="categoryId" defaultValue={todo?.categoryId || "none"}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
