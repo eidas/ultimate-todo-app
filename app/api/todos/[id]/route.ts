@@ -5,7 +5,7 @@ import { ZodError, z } from 'zod';
 // バリデーションスキーマ
 const todoUpdateSchema = z.object({
   title: z.string().min(1, { message: 'Title is required' }).optional(),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
   status: z.string().optional(),
   priority: z.string().optional(),
   dueDate: z.string().nullable().optional().transform(val => val ? new Date(val) : null),
@@ -46,9 +46,11 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
+    console.log('Received update data for todo', params.id, ':', body);
     
     // 入力データの検証
     const validatedData = todoUpdateSchema.parse(body);
+    console.log('Validated update data:', validatedData);
     
     const updatedTodo = await TodoService.updateTodo(params.id, validatedData);
     return NextResponse.json(updatedTodo);
@@ -63,7 +65,7 @@ export async function PUT(
     }
     
     return NextResponse.json(
-      { error: 'Failed to update todo' },
+      { error: 'Failed to update todo', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -80,7 +82,7 @@ export async function DELETE(
   } catch (error) {
     console.error(`Error deleting todo ${params.id}:`, error);
     return NextResponse.json(
-      { error: 'Failed to delete todo' },
+      { error: 'Failed to delete todo', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
