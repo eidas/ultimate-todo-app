@@ -72,6 +72,11 @@ export default function Home() {
       if (data.completed === "false") data.completed = false;
       if (data.dueDate === "") data.dueDate = null;
 
+      // Handle categoryId "none" to null conversion
+      if (data.categoryId === "none") data.categoryId = null;
+
+      console.log("Creating todo with data:", data);
+
       // Make API request
       const response = await fetch("/api/todos", {
         method: "POST",
@@ -81,7 +86,11 @@ export default function Home() {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error("Failed to create todo");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server error:", errorData);
+        throw new Error(errorData.error || "Failed to create todo");
+      }
 
       // Refresh the todo list
       const todosResponse = await fetch("/api/todos");
@@ -97,7 +106,7 @@ export default function Home() {
       console.error("Error adding todo:", error);
       toast({
         title: "Error",
-        description: "Failed to create task. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create task. Please try again.",
         variant: "destructive",
       });
     }
@@ -124,6 +133,11 @@ export default function Home() {
       if (data.completed === "false") data.completed = false;
       if (data.dueDate === "") data.dueDate = null;
 
+      // Handle categoryId "none" to null conversion
+      if (data.categoryId === "none") data.categoryId = null;
+
+      console.log("Updating todo with data:", data);
+
       // Make API request
       const response = await fetch(`/api/todos/${id}`, {
         method: "PUT",
@@ -133,7 +147,11 @@ export default function Home() {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error("Failed to update todo");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server error:", errorData);
+        throw new Error(errorData.error || "Failed to update todo");
+      }
 
       // Refresh the todo list
       const todosResponse = await fetch("/api/todos");
@@ -149,7 +167,7 @@ export default function Home() {
       console.error("Error updating todo:", error);
       toast({
         title: "Error",
-        description: "Failed to update task. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update task. Please try again.",
         variant: "destructive",
       });
     }
@@ -162,7 +180,10 @@ export default function Home() {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete todo");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete todo");
+      }
 
       // Update local state by filtering out the deleted todo
       setTodos((prev) => prev.filter((todo) => todo.id !== id));
@@ -175,7 +196,7 @@ export default function Home() {
       console.error("Error deleting todo:", error);
       toast({
         title: "Error",
-        description: "Failed to delete task. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to delete task. Please try again.",
         variant: "destructive",
       });
     }
@@ -188,7 +209,10 @@ export default function Home() {
         method: "POST",
       });
 
-      if (!response.ok) throw new Error("Failed to toggle todo status");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to toggle todo status");
+      }
 
       // Refresh the todo list
       const todosResponse = await fetch("/api/todos");
@@ -201,7 +225,7 @@ export default function Home() {
       console.error("Error toggling todo status:", error);
       toast({
         title: "Error",
-        description: "Failed to update task status. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update task status. Please try again.",
         variant: "destructive",
       });
     }
